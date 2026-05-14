@@ -13,7 +13,6 @@ clock = pygame.time.Clock()
 numbers = [5, 3, 9, 1, 7, 4]
 cell_width = WIDTH // len(numbers)
 
-
 def draw_grid(highlight_index=None, comparisons=0, message=""):
     screen.fill((30, 30, 30))
 

@@ -21,11 +21,12 @@ heap = []
 # Current processed event
 current_event = "No event processed yet"
 
-
 # -----------------------------
 # Heap Drawing Function
 # -----------------------------
-def draw_heap(heap, highlight_indices=[]):
+def draw_heap(heap, highlight_indices=None):
+    if highlight_indices is None:
+        highlight_indices = []
 
     screen.fill((245, 245, 245))
 
@@ -167,7 +168,6 @@ def heapify_up(heap, index):
             )
 
             draw_heap(heap, [parent, index])
-
             pygame.time.wait(500)
 
             index = parent

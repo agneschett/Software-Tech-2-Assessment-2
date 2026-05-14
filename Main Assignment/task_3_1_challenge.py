@@ -36,8 +36,11 @@ graph = {
 # Global traversal order list
 traversal_order = []
 
-
-def draw_graph(visited=set(), frontier=set(), current=None):
+def draw_graph(visited=None, frontier=None, current=None):
+    if visited is None:
+        visited = set()
+    if frontier is None:
+        frontier = set()
     screen.fill((240, 240, 240))
 
     # Title

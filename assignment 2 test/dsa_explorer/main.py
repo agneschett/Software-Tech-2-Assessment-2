@@ -19,12 +19,12 @@ FONT  = pygame.font.SysFont(None, 36)
 SMALL = pygame.font.SysFont(None, 26)
 clock = pygame.time.Clock()
 
-# ─── Import modules ─────────────────────────────────────────────────────────
+#Import modules
 
 from modules import ds_hub, sorting_visualiser, graph_visualiser, heap_visualiser, puzzle_module
 
 
-# ─── Menu ───────────────────────────────────────────────────────────────────
+# Menu
 
 MENU_ITEMS = [
     {

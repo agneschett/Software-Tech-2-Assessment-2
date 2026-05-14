@@ -11,7 +11,7 @@ WIDTH, HEIGHT = 800, 700
 
 ROWS, COLS = 6, 6
 CELL_SIZE = 80
-
+  
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 pygame.display.set_caption("Dynamic Programming Visualiser")
