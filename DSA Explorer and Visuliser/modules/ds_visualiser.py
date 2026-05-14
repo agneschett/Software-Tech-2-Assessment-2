@@ -22,6 +22,12 @@ def run_stack(screen, font, clock, WIDTH, HEIGHT):
     BASE_X = WIDTH // 2 - BLOCK_W // 2
     BASE_Y = HEIGHT - BLOCK_H - 60
 
+    # Header area ends ~y=50 (title + back btn), footer at HEIGHT-50
+    STACK_TOP_LIMIT = 100   # blocks can't go above this y
+    MAX_VISIBLE = (BASE_Y - STACK_TOP_LIMIT) // (BLOCK_H + 6)
+
+    BACK_BTN = pygame.Rect(20, 15, 90, 36)
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -31,21 +37,32 @@ def run_stack(screen, font, clock, WIDTH, HEIGHT):
                 if event.key == pygame.K_ESCAPE:
                     return
                 elif event.key == pygame.K_SPACE:
-                    stack.push(counter); counter += 1
+                    if stack.size() < MAX_VISIBLE:
+                        stack.push(counter)
+                    counter += 1
                 elif event.key == pygame.K_BACKSPACE and not stack.is_empty():
                     stack.pop()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if BACK_BTN.collidepoint(event.pos):
+                    return
 
         screen.fill((20, 22, 30))
 
+        # Back button
+        pygame.draw.rect(screen, (100, 100, 120), BACK_BTN, border_radius=8)
+        bt = small.render("Back", True, (240, 240, 240))
+        screen.blit(bt, bt.get_rect(center=BACK_BTN.center))
+
         # Title
         t = font.render("Stack Visualiser  (LIFO)", True, (180, 200, 255))
-        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 15))
+        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 20))
 
-        # Draw blocks
+        # Draw blocks (only visible ones from bottom up)
         for i, val in enumerate(stack._data):
             y = BASE_Y - i * (BLOCK_H + 6)
+            if y < STACK_TOP_LIMIT:
+                break
             rect = pygame.Rect(BASE_X, y, BLOCK_W, BLOCK_H)
-            alpha = min(255, 140 + i * 15)
             color = (60 + i * 8, 100 + i * 5, 210)
             pygame.draw.rect(screen, color, rect, border_radius=8)
             pygame.draw.rect(screen, (150, 170, 255), rect, 2, border_radius=8)
@@ -55,12 +72,13 @@ def run_stack(screen, font, clock, WIDTH, HEIGHT):
         # TOP label
         if not stack.is_empty():
             top_y = BASE_Y - (stack.size() - 1) * (BLOCK_H + 6)
-            lbl = small.render("← TOP", True, (100, 255, 180))
-            screen.blit(lbl, (BASE_X + BLOCK_W + 8, top_y + 12))
+            if top_y >= STACK_TOP_LIMIT:
+                lbl = small.render("← TOP", True, (100, 255, 180))
+                screen.blit(lbl, (BASE_X + BLOCK_W + 8, top_y + 12))
 
         # Size
         sz = small.render(f"Size: {stack.size()}", True, (160, 170, 200))
-        screen.blit(sz, (20, 60))
+        screen.blit(sz, (20, 62))
 
         inst = small.render("SPACE = Push  |  BACKSPACE = Pop  |  ESC = back", True, (100, 110, 140))
         screen.blit(inst, (WIDTH // 2 - inst.get_width() // 2, HEIGHT - 30))
@@ -77,12 +95,28 @@ def run_queue(screen, font, clock, WIDTH, HEIGHT):
     small = pygame.font.SysFont(None, 24)
 
     START_X = 60
-    BASE_Y = HEIGHT // 2 - BLOCK_H // 2
+    ITEM_W = BLOCK_W + 10       # width per slot including gap
+    # How many items fit per row before wrapping
+    MAX_PER_ROW = max(1, (WIDTH - START_X - 20) // ITEM_W)
+    ROW1_Y = HEIGHT // 2 - BLOCK_H - 10
+    ROW2_Y = HEIGHT // 2 + 20
 
-    ENQ_BTN = pygame.Rect(WIDTH - 180, HEIGHT // 2 - 55, 140, 44)
-    DEQ_BTN = pygame.Rect(WIDTH - 180, HEIGHT // 2 + 5, 140, 44)
+    BACK_BTN = pygame.Rect(20, 15, 90, 36)
+    ENQ_BTN  = pygame.Rect(WIDTH - 160, HEIGHT // 2 - 55, 140, 44)
+    DEQ_BTN  = pygame.Rect(WIDTH - 160, HEIGHT // 2 + 5,  140, 44)
+
+    def item_pos(idx):
+        """Return (x, y) for the idx-th queue item, wrapping to row 2."""
+        if idx < MAX_PER_ROW:
+            return START_X + idx * ITEM_W, ROW1_Y
+        else:
+            return START_X + (idx - MAX_PER_ROW) * ITEM_W, ROW2_Y
 
     def draw_buttons():
+        pygame.draw.rect(screen, (100, 100, 120), BACK_BTN, border_radius=8)
+        bt = small.render("Back", True, (240, 240, 240))
+        screen.blit(bt, bt.get_rect(center=BACK_BTN.center))
+
         pygame.draw.rect(screen, (60, 180, 110), ENQ_BTN, border_radius=10)
         pygame.draw.rect(screen, (200, 80, 80), DEQ_BTN, border_radius=10)
         et = font.render("Enqueue", True, (240, 240, 240))
@@ -93,20 +127,21 @@ def run_queue(screen, font, clock, WIDTH, HEIGHT):
     def draw_base(highlight=None):
         screen.fill((20, 22, 30))
         t = font.render("Queue Visualiser  (FIFO)", True, (180, 200, 255))
-        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 15))
+        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 20))
         draw_buttons()
 
-        # FRONT/REAR labels
+        # FRONT / REAR labels
         if queue_list:
+            fx, fy = item_pos(0)
             front_lbl = small.render("FRONT", True, (100, 255, 180))
-            screen.blit(front_lbl, (START_X, BASE_Y - 22))
-            rx = START_X + (len(queue_list) - 1) * (BLOCK_W + 10)
+            screen.blit(front_lbl, (fx, fy - 22))
+            rx, ry = item_pos(len(queue_list) - 1)
             rear_lbl = small.render("REAR", True, (255, 200, 80))
-            screen.blit(rear_lbl, (rx, BASE_Y - 22))
+            screen.blit(rear_lbl, (rx, ry - 22))
 
         for i, val in enumerate(queue_list):
-            x = START_X + i * (BLOCK_W + 10)
-            rect = pygame.Rect(x, BASE_Y, BLOCK_W, BLOCK_H)
+            x, y = item_pos(i)
+            rect = pygame.Rect(x, y, BLOCK_W, BLOCK_H)
             color = (255, 200, 80) if i == highlight else (60, 100, 210)
             pygame.draw.rect(screen, color, rect, border_radius=8)
             pygame.draw.rect(screen, (150, 170, 255), rect, 2, border_radius=8)
@@ -114,16 +149,17 @@ def run_queue(screen, font, clock, WIDTH, HEIGHT):
             screen.blit(txt, txt.get_rect(center=rect.center))
 
         sz = small.render(f"Size: {len(queue_list)}", True, (160, 170, 200))
-        screen.blit(sz, (20, 60))
+        screen.blit(sz, (20, 62))
         inst = small.render("Click buttons to Enqueue / Dequeue  |  ESC = back", True, (100, 110, 140))
         screen.blit(inst, (WIDTH // 2 - inst.get_width() // 2, HEIGHT - 30))
 
     def animate_enqueue(value):
-        target_x = START_X + len(queue_list) * (BLOCK_W + 10)
+        idx = len(queue_list)
+        tx, ty = item_pos(idx)
         x = -BLOCK_W
-        while x < target_x:
+        while x < tx:
             draw_base()
-            rect = pygame.Rect(x, BASE_Y, BLOCK_W, BLOCK_H)
+            rect = pygame.Rect(x, ty, BLOCK_W, BLOCK_H)
             pygame.draw.rect(screen, (100, 255, 180), rect, border_radius=8)
             txt = font.render(str(value), True, (20, 20, 30))
             screen.blit(txt, txt.get_rect(center=rect.center))
@@ -134,18 +170,17 @@ def run_queue(screen, font, clock, WIDTH, HEIGHT):
     def animate_dequeue():
         if not queue_list:
             return
-        x = START_X
+        fx, fy = item_pos(0)
+        x = fx
         while x < WIDTH + BLOCK_W:
             draw_base()
-            # sliding out block
-            rect = pygame.Rect(x, BASE_Y, BLOCK_W, BLOCK_H)
+            rect = pygame.Rect(x, fy, BLOCK_W, BLOCK_H)
             pygame.draw.rect(screen, (220, 100, 80), rect, border_radius=8)
             txt = font.render(str(queue_list[0]), True, (240, 240, 240))
             screen.blit(txt, txt.get_rect(center=rect.center))
-            # remaining blocks (don't draw first)
             for i, val in enumerate(queue_list[1:], 1):
-                rx = START_X + (i - 1) * (BLOCK_W + 10)
-                rrect = pygame.Rect(rx, BASE_Y, BLOCK_W, BLOCK_H)
+                rx2, ry2 = item_pos(i)
+                rrect = pygame.Rect(rx2, ry2, BLOCK_W, BLOCK_H)
                 pygame.draw.rect(screen, (60, 100, 210), rrect, border_radius=8)
                 t2 = font.render(str(val), True, (240, 240, 240))
                 screen.blit(t2, t2.get_rect(center=rrect.center))
@@ -165,7 +200,9 @@ def run_queue(screen, font, clock, WIDTH, HEIGHT):
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if ENQ_BTN.collidepoint(event.pos):
+                if BACK_BTN.collidepoint(event.pos):
+                    return
+                elif ENQ_BTN.collidepoint(event.pos):
                     animate_enqueue(counter); counter += 1
                 elif DEQ_BTN.collidepoint(event.pos):
                     animate_dequeue()
@@ -235,10 +272,18 @@ def run_linked_list(screen, font, clock, WIDTH, HEIGHT):
     insert_val_temp = None
     message = ""
 
+    BACK_BTN = pygame.Rect(20, 15, 90, 36)
+
     def draw_ll(highlight_val=None):
         screen.fill((20, 22, 30))
+
+        # Back button
+        pygame.draw.rect(screen, (100, 100, 120), BACK_BTN, border_radius=8)
+        bt = small.render("Back", True, (240, 240, 240))
+        screen.blit(bt, bt.get_rect(center=BACK_BTN.center))
+
         t = font.render("Linked List Visualiser", True, (180, 200, 255))
-        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 15))
+        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 20))
 
         nodes = ll.to_list()
         total_w = len(nodes) * 110
@@ -321,3 +366,6 @@ def run_linked_list(screen, font, clock, WIDTH, HEIGHT):
                         input_mode = "insert_val"; input_text = ""
                     elif event.key == pygame.K_r:
                         ll.reverse(); message = "List reversed!"
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if not input_mode and BACK_BTN.collidepoint(event.pos):
+                    return

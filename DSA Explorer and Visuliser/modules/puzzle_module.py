@@ -215,31 +215,52 @@ def run_coin_change(screen, font, clock, WIDTH, HEIGHT):
     running_anim = False
     anim_timer = 0
     ANIM_DELAY = 400
-    BACK_BTN = pygame.Rect(20, 10, 90, 36)
-    RUN_BTN  = pygame.Rect(125, 10, 90, 36)
+
+    # ── Layout: every element gets its own vertical band, nothing overlaps ──
+    TITLE_Y      = 16          # Title text
+    BTN_Y        = 52          # Buttons (Back / Run)  — below title
+    INFO_Y       = 104         # "Coins: ... | Target: ..." line
+    HEADERS_Y    = 134         # Column index numbers (0..amount)
+    DP_ROW_Y     = 160         # Main DP table row
+    CELL_H       = 50
+    COIN_LBL_Y   = DP_ROW_Y + CELL_H + 18   # "Coin used:" label
+    COIN_ROW_Y   = COIN_LBL_Y + 26          # Coin-used cells
+    RESULT_Y     = COIN_ROW_Y + (CELL_H - 10) + 22  # Result line
+    BREAKDOWN_Y  = RESULT_Y + 34            # Coin breakdown line
+
+    BACK_BTN = pygame.Rect(20,  BTN_Y, 100, 38)
+    RUN_BTN  = pygame.Rect(135, BTN_Y, 100, 38)
 
     CELL_W = min(50, (WIDTH - 60) // (amount + 1))
-    CELL_H = 50
 
     def draw(highlight_i=None):
         screen.fill((20, 22, 30))
-        t = font.render("Coin Change — Dynamic Programming", True, (180, 200, 255))
-        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 10))
 
+        # Title
+        t = font.render("Coin Change — Dynamic Programming", True, (180, 200, 255))
+        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, TITLE_Y))
+
+        # Buttons
+        for btn, lbl, c in [(BACK_BTN, "Back", (100, 100, 120)), (RUN_BTN, "Run", (60, 160, 100))]:
+            pygame.draw.rect(screen, c, btn, border_radius=8)
+            btt = small.render(lbl, True, (240, 240, 240))
+            screen.blit(btt, btt.get_rect(center=btn.center))
+
+        # Info line
         ct = small.render(f"Coins: {coins}   |   Target amount: {amount}", True, (160, 200, 160))
-        screen.blit(ct, (20, 55))
+        screen.blit(ct, (20, INFO_Y))
 
         # Column headers
         for i in range(amount + 1):
             x = 30 + i * CELL_W
             ht = small.render(str(i), True, (120, 130, 160))
-            screen.blit(ht, (x + CELL_W//2 - ht.get_width()//2, 95))
+            screen.blit(ht, (x + CELL_W // 2 - ht.get_width() // 2, HEADERS_Y))
 
         # DP row
         if dp:
             for i in range(amount + 1):
                 x = 30 + i * CELL_W
-                rect = pygame.Rect(x, 120, CELL_W - 2, CELL_H)
+                rect = pygame.Rect(x, DP_ROW_Y, CELL_W - 2, CELL_H)
                 color = (255, 180, 80) if i == highlight_i else (60, 100, 180)
                 pygame.draw.rect(screen, color, rect, border_radius=6)
                 pygame.draw.rect(screen, (100, 130, 220), rect, 2, border_radius=6)
@@ -254,10 +275,10 @@ def run_coin_change(screen, font, clock, WIDTH, HEIGHT):
         # Coin used row
         if coin_used:
             ut = small.render("Coin used:", True, (160, 200, 160))
-            screen.blit(ut, (20, 185))
+            screen.blit(ut, (20, COIN_LBL_Y))
             for i in range(1, amount + 1):
                 x = 30 + i * CELL_W
-                rect = pygame.Rect(x, 200, CELL_W - 2, CELL_H - 10)
+                rect = pygame.Rect(x, COIN_ROW_Y, CELL_W - 2, CELL_H - 10)
                 pygame.draw.rect(screen, (50, 70, 100), rect, border_radius=6)
                 if coin_used[i]:
                     ct2 = small.render(str(coin_used[i]), True, (200, 220, 100))
@@ -268,22 +289,16 @@ def run_coin_change(screen, font, clock, WIDTH, HEIGHT):
             ans = dp[amount]
             msg = f"Minimum coins for {amount}: {ans}" if ans < 999 else "No solution!"
             rt = font.render(msg, True, (80, 220, 120) if ans < 999 else (220, 80, 80))
-            screen.blit(rt, (20, 270))
+            screen.blit(rt, (20, RESULT_Y))
 
-            # Show coin breakdown
+            # Coin breakdown
             if ans < 999 and coin_used:
                 breakdown = []
                 cur = amount
                 while cur > 0 and coin_used[cur]:
                     breakdown.append(coin_used[cur]); cur -= coin_used[cur]
                 bt = small.render("Coins: " + " + ".join(map(str, breakdown)), True, (200, 210, 255))
-                screen.blit(bt, (20, 305))
-
-        # Buttons
-        for btn, lbl, c in [(BACK_BTN,"Back",(100,100,120)), (RUN_BTN,"Run",(60,160,100))]:
-            pygame.draw.rect(screen, c, btn, border_radius=8)
-            btt = small.render(lbl, True, (240,240,240))
-            screen.blit(btt, btt.get_rect(center=btn.center))
+                screen.blit(bt, (20, BREAKDOWN_Y))
 
         inst = small.render("ESC = back to puzzles", True, (100, 110, 140))
         screen.blit(inst, (20, HEIGHT - 30))

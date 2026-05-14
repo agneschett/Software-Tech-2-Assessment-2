@@ -96,10 +96,18 @@ def run(screen, font, clock, WIDTH, HEIGHT):
     trav_timer = 0
     trav_name = ""
 
+    BACK_BTN = pygame.Rect(20, 15, 90, 36)
+
     def draw(pos):
         screen.fill((20, 22, 30))
+
+        # Back button
+        pygame.draw.rect(screen, (100, 100, 120), BACK_BTN, border_radius=8)
+        bt = small.render("Back", True, (240, 240, 240))
+        screen.blit(bt, bt.get_rect(center=BACK_BTN.center))
+
         t = font.render("BST Visualiser", True, (180, 200, 255))
-        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 10))
+        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 18))
 
         # Edges
         for node, (x, y) in pos.items():
@@ -191,3 +199,6 @@ def run(screen, font, clock, WIDTH, HEIGHT):
                         trav_list = bst.preorder(); trav_idx = 0; trav_timer = pygame.time.get_ticks(); trav_name = "Pre-order"
                     elif event.key == pygame.K_3:
                         trav_list = bst.postorder(); trav_idx = 0; trav_timer = pygame.time.get_ticks(); trav_name = "Post-order"
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if not input_mode and BACK_BTN.collidepoint(event.pos):
+                    return

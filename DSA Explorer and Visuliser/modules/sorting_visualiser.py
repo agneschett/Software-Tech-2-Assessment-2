@@ -41,7 +41,7 @@ def run(screen, font, clock, WIDTH, HEIGHT):
 
         # Title
         t = font.render("Sorting Algorithm Visualiser", True, (180, 200, 255))
-        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 10))
+        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 58))
 
         # Bars
         for idx, val in enumerate(array):

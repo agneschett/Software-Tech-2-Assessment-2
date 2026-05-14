@@ -36,9 +36,23 @@ def run(screen, font, clock, WIDTH, HEIGHT):
     step_idx = 0
     step_timer = 0
 
-    BFS_BTN  = pygame.Rect(20,  10, 100, 38)
-    DFS_BTN  = pygame.Rect(135, 10, 100, 38)
-    BACK_BTN = pygame.Rect(WIDTH - 120, 10, 100, 38)
+    # Layout: title at top, buttons below title, graph nodes shifted down below header
+    TITLE_Y  = 14
+    BTN_Y    = 56
+    BFS_BTN  = pygame.Rect(20,  BTN_Y, 100, 38)
+    DFS_BTN  = pygame.Rect(135, BTN_Y, 100, 38)
+    BACK_BTN = pygame.Rect(WIDTH - 120, BTN_Y, 100, 38)
+
+    # Shift all nodes down so they sit well below the header (buttons end ~y=94)
+    NODE_OFFSET_Y = 120
+    scaled_nodes = {
+        'A': (120, NODE_OFFSET_Y + 80),
+        'B': (300, NODE_OFFSET_Y + 20),
+        'C': (200, NODE_OFFSET_Y + 200),
+        'D': (460, NODE_OFFSET_Y + 80),
+        'E': (580, NODE_OFFSET_Y + 170),
+        'F': (380, NODE_OFFSET_Y + 310),
+    }
 
     def compute_bfs(start):
         steps = []
@@ -68,8 +82,10 @@ def run(screen, font, clock, WIDTH, HEIGHT):
 
     def draw(vis, frontier, current, order):
         screen.fill((20, 22, 30))
+
+        # Title
         t = font.render(f"Graph Traversal — {mode}  (click a node to start)", True, (180, 200, 255))
-        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, 14))
+        screen.blit(t, (WIDTH // 2 - t.get_width() // 2, TITLE_Y))
 
         # Buttons
         for btn, lbl, c in [(BFS_BTN, "BFS", (60,160,100)), (DFS_BTN, "DFS", (160,80,160)), (BACK_BTN, "Back", (100,100,120))]:
@@ -81,18 +97,18 @@ def run(screen, font, clock, WIDTH, HEIGHT):
         # Edges
         drawn = set()
         for node, neighbors in graph.items():
-            x1, y1 = nodes_pos[node]
+            x1, y1 = scaled_nodes[node]
             for nb in neighbors:
                 key = frozenset([node, nb])
                 if key not in drawn:
-                    x2, y2 = nodes_pos[nb]
+                    x2, y2 = scaled_nodes[nb]
                     pygame.draw.line(screen, (80, 100, 160), (x1, y1), (x2, y2), 2)
                     drawn.add(key)
 
         # Nodes
-        for node, (x, y) in nodes_pos.items():
+        for node, (x, y) in scaled_nodes.items():
             color = (55, 70, 110)
-            if node in vis:     color = (60, 190, 110)
+            if node in vis:      color = (60, 190, 110)
             if node in frontier: color = (220, 180, 60)
             if node == current:  color = (220, 80, 80)
             pygame.draw.circle(screen, color, (x, y), NODE_R)
@@ -113,7 +129,7 @@ def run(screen, font, clock, WIDTH, HEIGHT):
         pygame.display.flip()
 
     def get_clicked_node(pos):
-        for node, (x, y) in nodes_pos.items():
+        for node, (x, y) in scaled_nodes.items():
             if ((pos[0]-x)**2 + (pos[1]-y)**2)**0.5 <= NODE_R:
                 return node
         return None
